@@ -1,0 +1,13 @@
+(sym_lib_table
+  (version 7)
+  (lib (name "USB4105-GF-A-060")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/USB4105-GF-A-060.kicad_sym")(options "")(descr ""))
+  (lib (name "61300311121")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/61300311121.kicad_sym")(options "")(descr ""))
+  (lib (name "ECMF02-2AMX6")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/ECMF02-2AMX6.kicad_sym")(options "")(descr ""))
+  (lib (name "APT1608SECK")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/APT1608SECK.kicad_sym")(options "")(descr ""))
+  (lib (name "MS561101BA03-50")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/MS561101BA03-50.kicad_sym")(options "")(descr ""))
+  (lib (name "MCU_ESP32")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/MCU_ESP32.kicad_sym")(options "")(descr ""))
+  (lib (name "BMI323")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/BMI323.kicad_sym")(options "")(descr ""))
+  (lib (name "B2B-PH-K-S")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/B2B-PH-K-S.kicad_sym")(options "")(descr ""))
+  (lib (name "BMP581")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/BMP581.kicad_sym")(options "")(descr ""))
+  (lib (name "SMTB-0927-TW-R")(type "KiCad")(uri "${KIPRJMOD}/libs/symbols/SMTB-0927-TW-R.kicad_sym")(options "")(descr ""))
+)
