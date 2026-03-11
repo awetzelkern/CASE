@@ -3,8 +3,8 @@
 #include <SPI.h>
 #include <SparkFun_BMP581_Arduino_Library.h>
 
-#define ACC_CONF 0x20
-#define GYR_CONF 0x21
+#define ACC_CONF 0x20 // from BMI323 datasheet, replace with the real register address
+#define GYR_CONF 0x21 // from BMI323 datasheet, replace with the real register address
 
 BMP581 bmp;
 
@@ -16,14 +16,37 @@ void setupPins();
 void bmiSelect();
 void bmiDeselect();
 void bmiBeginSPI();
+void blinkLED(int pin, int duration, int delayTime);
+void playTone(int freq, int duration);
+void startupSong();
+void startupSuccess();
+void errorTone();
 
 uint8_t bmiReadReg8(uint8_t reg);
 uint16_t bmiReadReg16(uint8_t reg);
 void bmiWriteReg16(uint8_t reg, uint16_t value);
 bool initBMI323();
 
+// STARUP SEQUENCE:
+// 1. Blink all LEDs and play a startup song to indicate we're starting the setup process
+// 2. Turn on the yellow LED and initialize serial communication for debugging output
+// 3. Initialize pins
+// 4. Initialize SPI communication
+// 5. Initialize BMP581 and check for errors, blink orange LED if successful, otherwise play error tone and blink red LED indefinitely
+// 6. Initialize BMI323 and check for errors, blink orange LED twice if successful, otherwise play error tone and blink red LED indefinitely
+// 7. If everything is successful, turn on the green LED and play the success song
+
 void setup() {
   // put your setup code here, to run once:
+
+  blinkLED(LED_GREEN, 200, 200);
+  blinkLED(LED_YELLOW, 200, 200);
+  blinkLED(LED_RED, 200, 200);
+  blinkLED(LED_ORANGE, 200, 200);
+  startupSong();
+
+  digitalWrite(LED_YELLOW, HIGH); // Keep yellow LED on to indicate we're in setup
+
   Serial.begin(115200); // Initialize serial communication at 115200 baud rate
   delay(1000); // Wait for a moment to ensure the serial connection is established
   
@@ -38,21 +61,36 @@ void setup() {
   if (err != BMP5_OK) {
     Serial.print("BMP581 init failed, error = ");
     Serial.println(err);
-    while (1) {}
+    errorTone();
+    while (true) {
+      blinkLED(LED_RED, 500, 100);
+    }
   }
+  blinkLED(LED_ORANGE, 200, 100);
 
   // BMI323 initialization
   if (!initBMI323()) {
     Serial.println("BMI323 init failed");
-    while (1) {}
+    errorTone();
+    while (true) {
+      blinkLED(LED_RED, 500, 100);
+    }
   }
   uint16_t chipID16 = bmiReadReg16(0x00);
   Serial.print("BMI323 CHIP_ID reg16: 0x");
   Serial.println(chipID16, HEX);
+  blinkLED(LED_ORANGE, 200, 100);
+  blinkLED(LED_ORANGE, 200, 100);
 
-  // Success!!
   Serial.println("BMP581 ready");
   Serial.println("BMI323 ready");
+
+  // Success!!
+  digitalWrite(LED_YELLOW, LOW); // Turn off yellow LED to indicate setup is done
+  digitalWrite(LED_GREEN, HIGH); // Turn on green LED to indicate success
+  startupSuccess();
+  delay(500);
+  digitalWrite(LED_GREEN, LOW); // Turn off green LED after success indication
 }
 
 void loop() {
@@ -70,7 +108,7 @@ void loop() {
     Serial.println(err);
   }
 
-  delay(100);
+  blinkLED(LED_GREEN, 100, 900); // Blink green LED every second to indicate we're alive
   
 }
 
@@ -122,6 +160,43 @@ void bmiBeginSPI() {
   SPI.transfer(0x00);   // extra clocks
   bmiDeselect();
   delay(1);
+}
+
+void blinkLED(int pin, int duration, int delayTime) {
+  digitalWrite(pin, HIGH);
+  delay(duration);
+  digitalWrite(pin, LOW);
+  delay(delayTime);
+}
+
+void playTone(int freq, int duration)
+{
+    tone(BUZZER, freq, duration);
+    delay(duration * 1.3); // small gap between notes
+}
+
+void startupSong()
+{
+    // ascending "boot success" chirp
+    playTone(880, 80);
+    playTone(988, 80);
+    playTone(1047, 80);
+    playTone(1175, 120);
+}
+
+void startupSuccess()
+{
+    blinkLED(LED_GREEN, 200, 100);
+    playTone(523, 120);   // C5
+    playTone(659, 120);   // E5
+    playTone(784, 120);   // G5
+    playTone(1047, 180);  // C6
+}
+
+void errorTone()
+{
+    playTone(200, 500);   // low buzz
+    playTone(200, 500);   // low buzz
 }
 
 // Read one byte from the BMI323 over SPI
