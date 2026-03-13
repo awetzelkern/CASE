@@ -6083,6 +6083,19 @@
 		(uuid e07c3692-da9d-41a3-9ba4-2962d2beb5aa)
 	)
 	(rectangle
+		(start 54.61 203.2)
+		(end 83.82 234.95)
+		(stroke
+			(width 0.254)
+			(type dash_dot)
+			(color 0 132 0 1)
+		)
+		(fill
+			(type none)
+		)
+		(uuid e14a3d85-64a0-4b18-857d-83396bbfcecf)
+	)
+	(rectangle
 		(start 124.46 15.24)
 		(end 171.45 33.02)
 		(stroke
@@ -6205,6 +6218,18 @@
 			)
 		)
 		(uuid "78f6f93d-e25a-46dd-96f2-4e7f5050299d")
+	)
+	(text "CORRECT CONFIGURATION"
+		(exclude_from_sim no)
+		(at 57.404 232.918 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 0 132 0 1)
+			)
+			(justify left)
+		)
+		(uuid "879a20f3-8555-411a-8b23-13325ff1d8f0")
 	)
 	(text "MCU Boot Delay"
 		(exclude_from_sim no)
@@ -6433,6 +6458,12 @@
 		(diameter 0)
 		(color 0 0 0 0)
 		(uuid "25ed483b-05df-4a2e-a5bf-d21862823272")
+	)
+	(junction
+		(at 71.12 224.79)
+		(diameter 0)
+		(color 0 0 0 0)
+		(uuid "2a622466-5e1a-4004-9696-57ea04e3f910")
 	)
 	(junction
 		(at 231.14 156.21)
@@ -8066,6 +8097,16 @@
 	)
 	(wire
 		(pts
+			(xy 68.58 224.79) (xy 71.12 224.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8815e6f7-761f-4d0b-a717-6861c40bf9d7")
+	)
+	(wire
+		(pts
 			(xy 256.54 86.36) (xy 262.89 86.36)
 		)
 		(stroke
@@ -8093,6 +8134,16 @@
 			(type default)
 		)
 		(uuid "8bb77c7f-08e2-48a8-bd0e-c2dbf5ed61b8")
+	)
+	(wire
+		(pts
+			(xy 68.58 222.25) (xy 68.58 224.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "8d16d5e8-675f-4868-9685-5f2c943362f2")
 	)
 	(wire
 		(pts
@@ -8856,6 +8907,16 @@
 	)
 	(wire
 		(pts
+			(xy 71.12 222.25) (xy 71.12 224.79)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d14d894e-dfdb-4c2c-90b1-78be43c3cbc5")
+	)
+	(wire
+		(pts
 			(xy 256.54 107.95) (xy 262.89 107.95)
 		)
 		(stroke
@@ -8883,6 +8944,16 @@
 			(type default)
 		)
 		(uuid "d25ca0ff-c41f-4bd6-9fe3-71d9902d4ac7")
+	)
+	(wire
+		(pts
+			(xy 71.12 224.79) (xy 71.12 227.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "d35e88d3-7a14-4fbc-9335-9b8abb9d769f")
 	)
 	(wire
 		(pts
@@ -10681,6 +10752,85 @@
 			(project "CASE"
 				(path "/be8da508-0732-4f37-93ed-c5b606d31b4d"
 					(reference "C105")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Power_Protection:ECMF02-2AMX6")
+		(at 68.58 214.63 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "2463c65d-d8d9-42dc-a867-7134f5f1b1de")
+		(property "Reference" "U108"
+			(at 68.58 206.502 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "ECMF02-2AMX6"
+			(at 68.58 208.28 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_DFN_QFN:ST_UQFN-6L_1.5x1.7mm_P0.5mm"
+			(at 68.58 234.95 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" "https://www.st.com/resource/en/datasheet/ecmf02-2amx6.pdf"
+			(at 68.58 237.49 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Single Pair Common Mode Filter with ESD Protection, UQFN-6L"
+			(at 68.58 214.63 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "2"
+			(uuid "1fd770ae-40df-4e86-9c7b-1e01fa9a0338")
+		)
+		(pin "1"
+			(uuid "3edd1b0c-1227-4f65-89c8-4288ca887734")
+		)
+		(pin "3"
+			(uuid "44957c28-0795-41da-9d34-ef2a78d486b4")
+		)
+		(pin "4"
+			(uuid "b114b538-0635-4609-8b42-6f88c50ec7df")
+		)
+		(pin "6"
+			(uuid "3383fb6e-6803-4b59-8708-cb69eb7adb00")
+		)
+		(pin "5"
+			(uuid "01edd0f1-f622-4a65-9120-f54a8adfd101")
+		)
+		(instances
+			(project "CASE"
+				(path "/be8da508-0732-4f37-93ed-c5b606d31b4d"
+					(reference "U108")
 					(unit 1)
 				)
 			)
@@ -16714,6 +16864,71 @@
 			(project "CASE"
 				(path "/be8da508-0732-4f37-93ed-c5b606d31b4d"
 					(reference "#PWR0109")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 71.12 227.33 0)
+		(unit 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(dnp no)
+		(uuid "fae021eb-ec78-4a57-ab78-5657a2f2eb3f")
+		(property "Reference" "#PWR0137"
+			(at 71.12 233.68 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Value" "GND"
+			(at 75.184 229.362 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 71.12 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Datasheet" ""
+			(at 71.12 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 71.12 227.33 0)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+				(hide yes)
+			)
+		)
+		(pin "1"
+			(uuid "e30b73e1-b993-403d-af74-08a940e5f403")
+		)
+		(instances
+			(project "CASE"
+				(path "/be8da508-0732-4f37-93ed-c5b606d31b4d"
+					(reference "#PWR0137")
 					(unit 1)
 				)
 			)
