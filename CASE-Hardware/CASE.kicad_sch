@@ -5926,6 +5926,19 @@
 		(uuid 076e5bbd-cc8b-4680-b77c-c1c07bf2fecd)
 	)
 	(rectangle
+		(start 57.15 156.21)
+		(end 81.28 189.23)
+		(stroke
+			(width 0.254)
+			(type dash_dot)
+			(color 255 0 0 1)
+		)
+		(fill
+			(type none)
+		)
+		(uuid 42b2c06d-b7b9-443d-bff8-3fdc7f4a0a27)
+	)
+	(rectangle
 		(start 15.24 86.36)
 		(end 99.06 129.54)
 		(stroke
@@ -6348,6 +6361,18 @@
 			)
 		)
 		(uuid "fa32e32d-c118-407e-b9d8-8140a14cb619")
+	)
+	(text "WARNING: Pin 3 should \nbe connected to GND, \npin 4 should be left \nunconnected"
+		(exclude_from_sim no)
+		(at 57.912 184.658 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+				(color 255 0 0 1)
+			)
+			(justify left)
+		)
+		(uuid "fdfaeeb2-815a-4203-9801-a014dde73dd4")
 	)
 	(junction
 		(at 171.45 68.58)
