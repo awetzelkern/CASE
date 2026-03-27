@@ -2,114 +2,86 @@
 #include <pins.h>
 #include <SPI.h>
 #include <SparkFun_BMP581_Arduino_Library.h>
-
-#define ACC_CONF 0x20 // from BMI323 datasheet, replace with the real register address
-#define GYR_CONF 0x21 // from BMI323 datasheet, replace with the real register address
+#include <BMI323.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 BMP581 bmp;
+BMI323 bmi;
 
-SPISettings bmiSPISettings(1000000, MSBFIRST, SPI_MODE0);  // start safe at 1 MHz
-
+constexpr float seaLevelPressure = 1013.25; // mb
 
 // put function declarations here:
 void setupPins();
-void bmiSelect();
-void bmiDeselect();
-void bmiBeginSPI();
-void blinkLED(int pin, int duration, int delayTime);
 void playTone(int freq, int duration);
-void startupSong();
-void startupSuccess();
+void blinkLED(int ledPin, int onDuration, int offDuration);
+void startupSuccessSong();
 void errorTone();
+float calculate_altitude(float pressure, float seaLevelPressure);
 
-uint8_t bmiReadReg8(uint8_t reg);
-uint16_t bmiReadReg16(uint8_t reg);
-void bmiWriteReg16(uint8_t reg, uint16_t value);
-bool initBMI323();
-
-// STARUP SEQUENCE:
-// 1. Blink all LEDs and play a startup song to indicate we're starting the setup process
-// 2. Turn on the yellow LED and initialize serial communication for debugging output
-// 3. Initialize pins
-// 4. Initialize SPI communication
-// 5. Initialize BMP581 and check for errors, blink orange LED if successful, otherwise play error tone and blink red LED indefinitely
-// 6. Initialize BMI323 and check for errors, blink orange LED twice if successful, otherwise play error tone and blink red LED indefinitely
-// 7. If everything is successful, turn on the green LED and play the success song
+// FreeRTOS Threads
+void barometer_thread(void* arg);
+void imu_thread(void* arg);
 
 void setup() {
-  // put your setup code here, to run once:
+    // put your setup code here, to run once:
+    playTone(1000, 100); // Play a quick tone to indicate startup
+    blinkLED(LED_GREEN, 200, 100);
+    digitalWrite(LED_YELLOW, HIGH); // Keep yellow LED on to indicate we're in setup
 
-  blinkLED(LED_GREEN, 200, 200);
-  blinkLED(LED_YELLOW, 200, 200);
-  blinkLED(LED_RED, 200, 200);
-  blinkLED(LED_ORANGE, 200, 200);
-  startupSong();
+    Serial.begin(115200); // Initialize serial communication at 115200 baud rate
+    while(!Serial) { } // Wait for Serial to be ready
 
-  digitalWrite(LED_YELLOW, HIGH); // Keep yellow LED on to indicate we're in setup
+    Serial.println("Starting setup...");
 
-  Serial.begin(115200); // Initialize serial communication at 115200 baud rate
-  delay(1000); // Wait for a moment to ensure the serial connection is established
-  
-  Serial.println("Starting setup...");
+    setupPins();
 
-  setupPins();
+    SPI.begin(SCK, MISO, MOSI); // Initialize SPI communication
 
-  SPI.begin(); // Initialize SPI communication
-
-  // BMP581 initialization
-  int8_t err = bmp.beginSPI(BMP_CS, 1000000);  // 1 MHz to start
-  if (err != BMP5_OK) {
-    Serial.print("BMP581 init failed, error = ");
-    Serial.println(err);
-    errorTone();
-    while (true) {
-      blinkLED(LED_RED, 500, 100);
+    // BMP581 initialization
+    int8_t err = bmp.beginSPI(BMP_CS, 1000000);  // 1 MHz to start
+    if (err != BMP5_OK) {
+        Serial.print("BMP581 init failed, error = ");
+        Serial.println(err);
+        errorTone();
+        while (true) {
+        blinkLED(LED_RED, 500, 100);
+        }
     }
-  }
-  blinkLED(LED_ORANGE, 200, 100);
 
-  // BMI323 initialization
-  if (!initBMI323()) {
-    Serial.println("BMI323 init failed");
-    errorTone();
-    while (true) {
-      blinkLED(LED_RED, 500, 100);
+    // BMI323 initialization
+    if (bmi.initBMI323()) {
+        Serial.println("BMI323 ready");
+        Serial.println("Format: ax,ay,az,gx,gy,gz,temp");
+        Serial.println("Units: g,g,g,deg/s,deg/s,deg/s,C");
+    } else {
+        Serial.println("BMI323 failed to initialize! Check wiring.");
+    while (1);  // Stop if setup fails
     }
-  }
-  uint16_t chipID16 = bmiReadReg16(0x00);
-  Serial.print("BMI323 CHIP_ID reg16: 0x");
-  Serial.println(chipID16, HEX);
-  blinkLED(LED_ORANGE, 200, 100);
-  blinkLED(LED_ORANGE, 200, 100);
 
-  Serial.println("BMP581 ready");
-  Serial.println("BMI323 ready");
+    digitalWrite(LED_YELLOW, LOW); // Turn off yellow LED to indicate setup is done
+    startupSuccessSong();
 
-  // Success!!
-  digitalWrite(LED_YELLOW, LOW); // Turn off yellow LED to indicate setup is done
-  digitalWrite(LED_GREEN, HIGH); // Turn on green LED to indicate success
-  startupSuccess();
-  delay(500);
-  digitalWrite(LED_GREEN, LOW); // Turn off green LED after success indication
+
+    // xTaskCreatePinnedToCore(barometer_thread, "barometer_thread", 4096, NULL, 1, NULL, 1);
+    // xTaskCreatePinnedToCore(imu_thread, "imu_thread", 4096, NULL, 1, NULL, 1);
+
+    while(true) { 
+    } // Keeps the main thread alive, all work is done in FreeRTOS tasks
+
+    /* 
+    The last code I wrote before frying my regulators, never do this again:
+
+    digitalWrite(TVC_X, HIGH); // Center TVC servos
+    delayMicroseconds(200);
+
+    digitalWrite(TVC_X, LOW); // Move TVC to max position to test
+    delayMicroseconds(1800);
+    */
 }
 
 void loop() {
-  bmp5_sensor_data data;
-
-  int8_t err = bmp.getSensorData(&data);
-  if (err == BMP5_OK) {
-    Serial.print("Pressure (Pa): ");
-    Serial.println(data.pressure);
-
-    Serial.print("Temperature (C): ");
-    Serial.println(data.temperature);
-  } else {
-    Serial.print("Read failed: ");
-    Serial.println(err);
-  }
-
-  blinkLED(LED_GREEN, 100, 900); // Blink green LED every second to indicate we're alive
-  
+  // empty for FreeRTOS tasks, all code runs in the threads
 }
 
 // put function definitions here:
@@ -119,7 +91,7 @@ void setupPins()
     pinMode(LED_GREEN, OUTPUT);
     pinMode(LED_YELLOW, OUTPUT);
     pinMode(LED_RED, OUTPUT);
-    pinMode(LED_ORANGE, OUTPUT);
+    // pinMode(LED_ORANGE, OUTPUT); This overrides the GPIO pins when serial initializes, so you can't use USB data, thus Serial doesn't work
 
     // Sensors
     pinMode(BMI_INT1, INPUT);
@@ -137,36 +109,6 @@ void setupPins()
 
     // Buzzer
     pinMode(BUZZER, OUTPUT);
-
-    // Boot switch
-    pinMode(BOOT_SW, INPUT_PULLUP);
-}
-
-void bmiSelect() {
-  SPI.beginTransaction(bmiSPISettings);
-  digitalWrite(BMI_CS, LOW);
-}
-
-void bmiDeselect() {
-  digitalWrite(BMI_CS, HIGH);
-  SPI.endTransaction();
-}
-
-// By default the BMI323 is in I2C mode, so we need to do a dummy SPI transaction to switch it to SPI mode
-void bmiBeginSPI() {
-  bmiSelect();
-  SPI.transfer(0x80);   // dummy read-like access
-  SPI.transfer(0x00);   // dummy byte
-  SPI.transfer(0x00);   // extra clocks
-  bmiDeselect();
-  delay(1);
-}
-
-void blinkLED(int pin, int duration, int delayTime) {
-  digitalWrite(pin, HIGH);
-  delay(duration);
-  digitalWrite(pin, LOW);
-  delay(delayTime);
 }
 
 void playTone(int freq, int duration)
@@ -175,16 +117,15 @@ void playTone(int freq, int duration)
     delay(duration * 1.3); // small gap between notes
 }
 
-void startupSong()
+void blinkLED(int ledPin, int onDuration, int offDuration)
 {
-    // ascending "boot success" chirp
-    playTone(880, 80);
-    playTone(988, 80);
-    playTone(1047, 80);
-    playTone(1175, 120);
+    digitalWrite(ledPin, HIGH);
+    delay(onDuration);
+    digitalWrite(ledPin, LOW);
+    delay(offDuration);
 }
 
-void startupSuccess()
+void startupSuccessSong()
 {
     blinkLED(LED_GREEN, 200, 100);
     playTone(523, 120);   // C5
@@ -199,74 +140,77 @@ void errorTone()
     playTone(200, 500);   // low buzz
 }
 
-// Read one byte from the BMI323 over SPI
-uint8_t bmiReadReg8(uint8_t reg) {
-  bmiSelect();
-
-  SPI.transfer(reg | 0x80);   // read
-  SPI.transfer(0x00);         // discard dummy byte
-  uint8_t data = SPI.transfer(0x00);
-
-  bmiDeselect();
-  return data;
+float calculate_altitude(float pressure, float seaLevelPressure) {
+    // The constant 44330 and the exponent 0.1903 are derived from the standard atmosphere model
+    float altitude = 44330.0f * (1.0f - pow(pressure / seaLevelPressure, 0.1903f));
+    return altitude;
 }
 
-// Read two bytes from the BMI323 over SPI
-uint16_t bmiReadReg16(uint8_t reg) {
-  bmiSelect();
+void barometer_thread(void* arg) {
+    while(true) {
+        bmp5_sensor_data data;
 
-  SPI.transfer(reg | 0x80);   // read
-  SPI.transfer(0x00);         // discard dummy byte
 
-  uint8_t lo = SPI.transfer(0x00);
-  uint8_t hi = SPI.transfer(0x00);
+        int8_t err = bmp.getSensorData(&data);
+        if (err == BMP5_OK) {
+        Serial.print("Pressure (Pa): ");
+        Serial.println(data.pressure);
 
-  bmiDeselect();
-  return (uint16_t(hi) << 8) | lo;
+        float pressure = data.pressure / 100; // convert to milibars
+
+        float altitude = calculate_altitude(pressure, seaLevelPressure);
+
+        // Serial.print("Altitude (m):");
+        // Serial.print(altitude);
+
+        // Serial.print(" | Temperature (C): ");
+        // Serial.print(data.temperature);
+        // } else {
+        // Serial.print("Read failed: ");
+        // Serial.println(err);
+        }
+    delay(10);
+    }
 }
 
-// Write two bytes to the BMI323 over SPI
-void bmiWriteReg16(uint8_t reg, uint16_t value) {
-  bmiSelect();
+void imu_thread(void* arg) {
+    while (true) {
+        // Limit output to 20Hz
+        unsigned long currentTime = millis();
+        unsigned long lastPrintTime = 0;
+        const unsigned long printInterval = 1000 / OUTPUT_RATE_HZ; // 20Hz
 
-  SPI.transfer(reg & 0x7F);        // write
-  SPI.transfer(value & 0xFF);      // low byte
-  SPI.transfer((value >> 8) & 0xFF); // high byte
+        if (currentTime - lastPrintTime < printInterval) return;
+        lastPrintTime = currentTime;
 
-  bmiDeselect();
-}
+        // Read sensor data
+        uint16_t accX = bmi.readRegister16(ACC_DATA_X_REG);
+        uint16_t accY = bmi.readRegister16(ACC_DATA_Y_REG);
+        uint16_t accZ = bmi.readRegister16(ACC_DATA_Z_REG);
+        uint16_t gyrX = bmi.readRegister16(GYR_DATA_X_REG);
+        uint16_t gyrY = bmi.readRegister16(GYR_DATA_Y_REG);
+        uint16_t gyrZ = bmi.readRegister16(GYR_DATA_Z_REG);
+        uint16_t tempRaw = bmi.readRegister16(TEMP_DATA_REG);
 
-bool initBMI323() {
-  bmiBeginSPI();
+        // Convert to physical units
+        float ax = bmi.convertAccelData(accX);
+        float ay = bmi.convertAccelData(accY);
+        float az = bmi.convertAccelData(accZ);
+        float gx = bmi.convertGyroData(gyrX);
+        float gy = bmi.convertGyroData(gyrY);
+        float gz = bmi.convertGyroData(gyrZ);
+        float temp = bmi.convertTempData(tempRaw);
 
-  uint8_t chipID = bmiReadReg8(0x00);   // CHIP_ID
-  Serial.print("BMI323 Chip ID: 0x");
-  Serial.println(chipID, HEX);
-
-  if (chipID != 0x43) {   // use the BMI323 expected chip ID from the datasheet
-    Serial.println("ERROR: BMI323 not detected correctly");
-    return false;
-  }
-
-  // Replace these with the real register addresses from your header/datasheet
-  // ACC_CONF and GYR_CONF are 16-bit config registers
-  bmiWriteReg16(ACC_CONF, 0x708B);
-  bmiWriteReg16(GYR_CONF, 0x708B);
-
-  delay(10);
-
-  uint16_t accConfReadback = bmiReadReg16(ACC_CONF);
-  uint16_t gyrConfReadback = bmiReadReg16(GYR_CONF);
-
-  Serial.print("ACC_CONF readback: 0x");
-  Serial.println(accConfReadback, HEX);
-  Serial.print("GYR_CONF readback: 0x");
-  Serial.println(gyrConfReadback, HEX);
-
-  if (accConfReadback != 0x708B || gyrConfReadback != 0x708B) {
-    Serial.println("BMI323 config readback mismatch");
-    return false;
-  }
-
-  return true;
+        // Print valid data in CSV format
+        // if (!isnan(ax) && !isnan(ay) && !isnan(az) &&
+        //     !isnan(gx) && !isnan(gy) && !isnan(gz)) {
+        //     Serial.print(ax, 3); Serial.print(",");
+        //     Serial.print(ay, 3); Serial.print(",");
+        //     Serial.print(az, 3); Serial.print(",");
+        //     Serial.print(gx, 2); Serial.print(",");
+        //     Serial.print(gy, 2); Serial.print(",");
+        //     Serial.print(gz, 2); Serial.print(",");
+        //     Serial.println(isnan(temp) ? "NAN" : String(temp, 1));
+        // }
+    }   
 }
