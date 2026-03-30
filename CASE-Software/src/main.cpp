@@ -6,8 +6,10 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+
 BMP581 bmp;
 BMI323 bmi;
+
 
 constexpr float seaLevelPressure = 1013.25; // mb
 
@@ -63,10 +65,11 @@ void setup() {
     startupSuccessSong();
 
 
-    // xTaskCreatePinnedToCore(barometer_thread, "barometer_thread", 4096, NULL, 1, NULL, 1);
-    // xTaskCreatePinnedToCore(imu_thread, "imu_thread", 4096, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(barometer_thread, "barometer_thread", 4096, NULL, 1, NULL, 1);
+    xTaskCreatePinnedToCore(imu_thread, "imu_thread", 4096, NULL, 1, NULL, 1);
 
     while(true) { 
+        delay(1000); // Keep main thread alive, all work is done in FreeRTOS tasks
     } // Keeps the main thread alive, all work is done in FreeRTOS tasks
 
     /* 
@@ -201,16 +204,24 @@ void imu_thread(void* arg) {
         float gz = bmi.convertGyroData(gyrZ);
         float temp = bmi.convertTempData(tempRaw);
 
-        // Print valid data in CSV format
-        // if (!isnan(ax) && !isnan(ay) && !isnan(az) &&
-        //     !isnan(gx) && !isnan(gy) && !isnan(gz)) {
-        //     Serial.print(ax, 3); Serial.print(",");
-        //     Serial.print(ay, 3); Serial.print(",");
-        //     Serial.print(az, 3); Serial.print(",");
-        //     Serial.print(gx, 2); Serial.print(",");
-        //     Serial.print(gy, 2); Serial.print(",");
-        //     Serial.print(gz, 2); Serial.print(",");
-        //     Serial.println(isnan(temp) ? "NAN" : String(temp, 1));
-        // }
+        if (ax > 1) {
+            blinkLED(LED_GREEN, 50, 0); // Quick blink on new data
+        } else if (ay > 1) {
+            blinkLED(LED_YELLOW, 50, 0);
+        } else if (az > 1) {
+            blinkLED(LED_RED, 50, 0);
+        }
+
+        //Print valid data in CSV format
+        if (!isnan(ax) && !isnan(ay) && !isnan(az) &&
+            !isnan(gx) && !isnan(gy) && !isnan(gz)) {
+            Serial.print(ax, 3); Serial.print(",");
+            Serial.print(ay, 3); Serial.print(",");
+            Serial.print(az, 3); Serial.print(",");
+            Serial.print(gx, 2); Serial.print(",");
+            Serial.print(gy, 2); Serial.print(",");
+            Serial.print(gz, 2); Serial.print(",");
+            Serial.println(isnan(temp) ? "NAN" : String(temp, 1));
+        }
     }   
 }
